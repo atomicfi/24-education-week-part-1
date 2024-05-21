@@ -1,4 +1,5 @@
 import puppeteer from "puppeteer";
+import { getFormattedData } from "./get-formatted-data.js";
 
 (async () => {
   // Launch the browser and open a new blank page
@@ -6,27 +7,33 @@ import puppeteer from "puppeteer";
   const page = await browser.newPage();
 
   // Navigate the page to a URL
-  await page.goto("https://developer.chrome.com/");
+  await page.goto("https://saltlakecity.craigslist.org/search/cta");
 
   // Set screen size
   await page.setViewport({ width: 1080, height: 1024 });
 
+  const searchXpath =
+    'xpath///div[contains(@class, "cl-query-with-search-suggest")]//input';
+
+  // Wait for the selector
+  await page.waitForSelector(searchXpath);
+
   // Type into search box
-  await page.type(".devsite-search-field", "automate beyond recorder");
+  await page.type(searchXpath, "tesla model 3");
 
-  // Wait and click on first result
-  const searchResultSelector = ".devsite-result-item-link";
-  await page.waitForSelector(searchResultSelector);
-  await page.click(searchResultSelector);
+  // Press Enter
+  await page.keyboard.press("Enter");
 
-  // Locate the full title with a unique string
-  const textSelector = await page.waitForSelector(
-    "text/Customize and automate"
-  );
-  const fullTitle = await textSelector?.evaluate((el) => el.textContent);
+  // Optional: Wait for results to load or some specific action
+  await page.waitForNavigation();
 
-  // Print the full title
-  console.log('The title of this blog post is "%s".', fullTitle);
+  const listItemSelector =
+    'xpath///div[contains(@class, "cl-results-page")]//ol/li';
 
-  await browser.close();
+  // Get the list of items
+  const listItems = await page.$$(listItemSelector);
+  const filterText = "tesla";
+  const filteredCars = await getFormattedData(page, listItems, filterText);
+
+  console.log(filteredCars);
 })();
