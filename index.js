@@ -1,5 +1,5 @@
 import puppeteer from "puppeteer";
-import { getFormattedData } from "./get-formatted-data.js";
+import { formatApartment } from "./apartment-util/format-apartment.js";
 
 (async () => {
   // Launch the browser and open a new blank page
@@ -7,7 +7,7 @@ import { getFormattedData } from "./get-formatted-data.js";
   const page = await browser.newPage();
 
   // Navigate the page to a URL
-  await page.goto("https://saltlakecity.craigslist.org/search/cta");
+  await page.goto("https://saltlakecity.craigslist.org/search/apa");
 
   // Set screen size
   await page.setViewport({ width: 1080, height: 1024 });
@@ -19,7 +19,7 @@ import { getFormattedData } from "./get-formatted-data.js";
   await page.waitForSelector(searchXpath);
 
   // Type into search box
-  await page.type(searchXpath, "tesla model 3");
+  await page.type(searchXpath, "studio");
 
   // Press Enter
   await page.keyboard.press("Enter");
@@ -32,8 +32,16 @@ import { getFormattedData } from "./get-formatted-data.js";
 
   // Get the list of items
   const listItems = await page.$$(listItemSelector);
-  const filterText = "tesla";
-  const filteredCars = await getFormattedData(page, listItems, filterText);
+  const formattedApartments = [];
+  for (const apartmentHandle of listItems) {
+    formattedApartments.push(
+      await formatApartment({ handle: apartmentHandle })
+    );
+  }
 
-  console.log(filteredCars);
+  // filter to price less that 1000
+
+  // favorite each in list
+
+  console.log(formattedApartments);
 })();
