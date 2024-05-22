@@ -1,47 +1,48 @@
-import puppeteer from "puppeteer";
-import { formatApartment } from "./apartment-util/format-apartment.js";
+import {
+  searchApartments,
+  searchDetails,
+  markFavorite,
+} from "./apartment-util/api-util.js";
+import cheerio from "cheerio";
 
 (async () => {
-  // Launch the browser and open a new blank page
-  const browser = await puppeteer.launch({ headless: false });
-  const page = await browser.newPage();
+  const query = "studio";
 
-  // Navigate the page to a URL
-  await page.goto("https://saltlakecity.craigslist.org/search/apa");
+  // extract title and id from page
+  const apartmentsHtml = await searchApartments({ query });
 
-  // Set screen size
-  await page.setViewport({ width: 1080, height: 1024 });
+  const $ = cheerio.load(apartmentsHtml);
 
-  const searchXpath =
-    'xpath///div[contains(@class, "cl-query-with-search-suggest")]//input';
+  const apartments = $("li.cl-static-search-result")
+    .toArray()
+    .map((el) => {
+      const title = $(el).attr("title");
+      const href = $(el).find("a").attr("href");
+      const id = href.match(/\/(\d+)\.html/)[1];
 
-  // Wait for the selector
-  await page.waitForSelector(searchXpath);
+      return { title, id };
+    })
+    .filter(({ id, title }) => id && title);
 
-  // Type into search box
-  await page.type(searchXpath, "studio");
+  // add details from searchDetails
+  const details = await searchDetails({ query });
+  const apartmentsWithDetails = apartments.map(({ id, title }) => {
+    const apartmentDetail = details.find((detail) => {
+      return title.includes(detail[8]);
+    });
 
-  // Press Enter
-  await page.keyboard.press("Enter");
+    // todo: decode other detail fields
 
-  // Optional: Wait for results to load or some specific action
-  await page.waitForNavigation();
+    return { id, title, rent: apartmentDetail?.[3] };
+  });
 
-  const listItemSelector =
-    'xpath///div[contains(@class, "cl-results-page")]//ol/li';
+  console.log(apartmentsWithDetails);
 
-  // Get the list of items
-  const listItems = await page.$$(listItemSelector);
-  const formattedApartments = [];
-  for (const apartmentHandle of listItems) {
-    formattedApartments.push(
-      await formatApartment({ handle: apartmentHandle })
-    );
+  const cheapApartments = apartmentsWithDetails.filter((apartment) => {
+    return apartment.rent < 1000;
+  });
+
+  for (const apartment of cheapApartments) {
+    await markFavorite({ id: apartment.id });
   }
-
-  // filter to price less that 1000
-
-  // favorite each in list
-
-  console.log(formattedApartments);
 })();
