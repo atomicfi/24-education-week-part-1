@@ -1,3 +1,16 @@
+export async function searchApartments({ query }) {
+  const url = `https://saltlakecity.craigslist.org/search/apa?query=${encodeURIComponent(
+    query
+  )}`;
+  const response = await fetch(url)
+    .then((res) => res.text())
+    .catch((e) => {
+      console.error(e);
+    });
+
+  return response;
+}
+
 export async function searchDetails({ query }) {
   const url = `https://sapi.craigslist.org/web/v8/postings/search/full?batch=56-0-360-0-0&cc=US&lang=en&query=${encodeURIComponent(
     query
@@ -11,18 +24,6 @@ export async function searchDetails({ query }) {
   return response?.data?.items ?? [];
 }
 
-export async function searchApartments({ query }) {
-  const url = `https://saltlakecity.craigslist.org/search/apa?query=${encodeURIComponent(
-    query
-  )}`;
-  const response = await fetch(url)
-    .then((res) => res.text())
-    .catch((e) => {
-      console.error(e);
-    });
-
-  return response;
-}
 
 export async function markFavorite({ id }) {
   const cookie =

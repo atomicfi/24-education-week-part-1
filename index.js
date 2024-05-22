@@ -26,15 +26,27 @@ import cheerio from "cheerio";
 
   // add details from searchDetails
   const details = await searchDetails({ query });
-  const apartmentsWithDetails = apartments.map(({ id, title }) => {
+  // const apartmentsWithDetails = apartments.map(({ id, title }) => {
+  //   const apartmentDetail = details.find((detail) => {
+  //     return title.includes(detail[8]);
+  //   });
+
+  //   // todo: decode other detail fields
+
+  //   return { id, title, rent: apartmentDetail?.[3] };
+  // });
+  const apartmentsWithDetails = [];
+  for (const apartment of apartments) {
     const apartmentDetail = details.find((detail) => {
-      return title.includes(detail[8]);
+      return apartment.title.includes(detail[8]);
     });
 
-    // todo: decode other detail fields
-
-    return { id, title, rent: apartmentDetail?.[3] };
-  });
+    apartmentsWithDetails.push({
+      id: apartment.id,
+      title: apartment.title,
+      rent: apartmentDetail?.[3],
+    });
+  }
 
   console.log(apartmentsWithDetails);
 
